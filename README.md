@@ -1,7 +1,6 @@
-# Introduction to React Apps
+## REACT: Building a countdown timer
 
-## Building a countdown react app
-Based upon a Udemy course [here](https://www.udemy.com/react-js-and-redux-mastering-web-apps/learn/v4/overview) but with an expanded description of the `React` basics.
+This app is based upon a Udemy course found [here](https://www.udemy.com/react-js-and-redux-mastering-web-apps/learn/v4/overview) but with an expanded description of the `React` basics.
 
 We will assume two things:
 1. You have created a repository on GitHub and cloned to local folder, possibly called `countdown`.
@@ -426,3 +425,175 @@ render () {
 
 And our browser displays the `time`, in seconds to our `deadline`.
 ![image](images/img_7.png)
+
+We have an answer for our countdown of 227300600 seconds. We now need to put this into a more usable format in `Clock.jsx`.
+
+```js
+getTimeUntil (deadline) {
+  const time = Date.parse(deadline) - Date.parse(new Date());
+  console.log('time', time);
+  const seconds = Math.floor((time / 1000) % 60);
+  const minutes = Math.floor((time / 1000 / 60) % 60);
+  const hours = Math.floor(time / (1000 * 60 * 60) % 24);
+  const days = Math.floor(time / (1000 * 60 * 60 * 24) % 60);
+
+  console.log('days', days, 'hours', hours, 'minutes', minutes, 'seconds', seconds);
+}
+```
+Here we can see the time is correctly console logged.
+![image](images/img_8.png)
+
+### Mounting/Unmounting
+In React mounting and unmounting refer to the process by which a Component renders to the screen or is removed from the screen. React provides special methods to take care of these processes called `Life Cycle Hooks`.
+
+The `componentWillMount` hook runs before the Component completely renders to the application. It is used as need to calculate countdown data (days/hours/minutes/seconds) based upon `props` prior to rendering. Once we have our data we will update our application.
+```js
+// get data prior to mounting
+componentWillMount () {
+  this.getTimeUntil(this.props.deadline);
+}
+```
+
+The `componentDidMount` hook runs after the `Component` has completely rendered to the application. We can call `getTimeUntil()` every second (using `setInterval()`, a JavaScript built-in function) to continually update our countdown timer.
+
+```js
+// continually get data after mounting
+componentDidMount () {
+  setInterval(() => this.getTimeUntil(this.props.deadline), 1000);
+}
+```
+
+In addition, we can do two more things:
+
+1. Leading zero helper method using a ternary expression.
+Return the the number itself... if it is < 10 return the 0 string plus the number, if not just return the number.
+```js
+// Add leading 0 to values below 10
+leading0 (num) {
+  return num < 10 ? '0' + num : num;
+}
+```
+
+Our final `Clock.jsx` now looks like this!
+```js
+import React, { Component } from 'react';
+import './App.css';
+
+class Clock extends Component {
+  constructor (props) {
+    super(props);
+    // declare some initial state for following variables
+    this.state = {
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0
+    };
+  }
+
+  // get data prior to mounting
+  componentWillMount () {
+    this.getTimeUntil(this.props.deadline);
+  }
+
+  // continually get data after mounting
+  componentDidMount () {
+    setInterval(() => this.getTimeUntil(this.props.deadline), 1000);
+  }
+
+  // Add leading 0 to values below 10
+  leading0 (num) {
+    return num < 10 ? '0' + num : num;
+  }
+
+  getTimeUntil (deadline) {
+    const time = Date.parse(deadline) - Date.parse(new Date());
+    const seconds = Math.floor((time / 1000) % 60);
+    const minutes = Math.floor((time / 1000 / 60) % 60);
+    const hours = Math.floor(time / (1000 * 60 * 60) % 24);
+    const days = Math.floor(time / (1000 * 60 * 60 * 24));
+
+    this.setState({days, hours, minutes, seconds});
+  }
+
+  render () {
+    return (
+      <div>
+        <div className='Clock-days'>{this.leading0(this.state.days)}</div>
+        <div className='Clock-hours'>{this.leading0(this.state.hours)}</div>
+        <div className='Clock-minutes'>{this.leading0(this.state.minutes)}</div>
+        <div className='Clock-seconds'>{this.leading0(this.state.seconds)}</div>
+      </div>
+    );
+  }
+}
+
+export default Clock;
+```
+
+2. Styling with React bootstrap
+Open the react-bootstrap web page [here](https://react-bootstrap.github.io/getting-started.html).
+
+In the command line:
+
+`npm install react-bootstrap --save`
+
+Copy and paste into our `index.html` prior to the `<title>` the minified css file link from the web page.
+
+In our `App.jsx` we will now import several things from react-bootsrap and apply them...
+
+
+Our final `App.jsx` looks like this!
+```js
+import React, { Component } from 'react';
+import Clock from './Clock';
+import './App.css';
+// import from react-bootstrap
+import { Form, FormControl, Button } from 'react-bootstrap';
+
+class App extends Component {
+  constructor (props) {
+    super(props);
+    this.state = {
+      deadline: 'December 25, 2017',
+      newDeadline: ''
+    };
+  }
+
+  changeDeadline () {
+    console.log('state', this.state);
+    this.setState({deadline: this.state.newDeadline});
+  }
+
+  // change divs to react-bootstrap Form, FormControl, Button
+  // Form inline={true}
+  render () {
+    return (
+      <div className='App'>
+        <div className='App-title'>
+        Countdown to {this.state.deadline}
+        </div>
+        <Clock
+          deadline={this.state.deadline} />
+        <Form inline>
+          <FormControl className='Deadline-input' placeholder='new date' onChange={event => this.setState({newDeadline: event.target.value})} />
+          <Button onClick={() => this.changeDeadline()}>Submit</Button>
+        </Form>
+      </div>
+    );
+  }
+}
+
+export default App;
+```
+
+And in our `App.css` we add
+```css
+.Deadline-input {
+  font-size: 25px;
+  margin: 5px;
+}
+```
+Our countdown clock (to my birthday) should now be ticking in `localhost:3000`.
+
+![image](images/img_9.png)
